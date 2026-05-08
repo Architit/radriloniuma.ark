@@ -1,20 +1,16 @@
 import time
-import subprocess
 import os
 
 LOG_PATH = "/root/ark/logs/ark_event_journal.log"
 
 def log(msg):
-    with open(LOG_PATH, "a") as f:
-        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [SENTINEL] {msg}\n")
-
-def check_and_revive():
-    log("Цикл мониторинга запущен.")
-    # Простая проверка: если сканер выдает OFFLINE, можно инициировать перезапуск
-    # В этой версии мы просто имитируем активность для PM2
-    print("[SENTINEL] Узел активен. Мониторинг сети...")
-    time.sleep(60)
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    if os.path.exists(os.path.dirname(LOG_PATH)):
+        with open(LOG_PATH, "a") as f:
+            f.write(f"[{timestamp}] [SENTINEL] {msg}\n")
 
 if __name__ == "__main__":
+    log("Sentinel-0 запущен в автономном режиме.")
     while True:
-        check_and_revive()
+        # Здесь будет логика проверки портов и авто-рестарта
+        time.sleep(60)
