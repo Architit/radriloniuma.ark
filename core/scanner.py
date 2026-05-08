@@ -1,6 +1,7 @@
 import socket
 import datetime
 import os
+import subprocess
 
 LOG_PATH = "/root/ark/logs/ark_event_journal.log"
 
@@ -16,15 +17,23 @@ def check_port(port):
         return s.connect_ex(('localhost', port)) == 0
 
 def run_diagnostics():
-    log_to_ark("Начало диагностики портов.")
-    ports = [8765, 8766, 8767]
-    results = {port: "OPEN" if check_port(port) else "CLOSED" for port in ports}
+    log_to_ark("Начало сканирования.")
+    ports = {8765: "Autopilot", 8766: "MCP_Gateway", 8767: "Mesh_Server"}
+    results = {port: check_port(port) for port in ports}
     
-    print("[SCANNER] Результаты проверки:")
-    for port, status in results.items():
-        print(f"  - Port {port}: {status}")
+    all_active = True
+    print("[SCANNER] Состояние узлов:")
+    for port, active in results.items():
+        status = "ONLINE" if active else "OFFLINE"
+        print(f"  - {ports[port]} (Port {port}): {status}")
+        if not active:
+            all_active = False
+            log_to_ark(f"Критический сбой: {ports[port]} на порту {port} недоступен.")
+
+    if not all_active:
+        print("[!] Обнаружены неактивные узлы. Рекомендуется запуск через PM2.")
     
-    log_to_ark(f"Диагностика завершена. Статус портов: {results}")
+    log_to_ark(f"Диагностика завершена. Все системы в норме: {all_active}")
 
 if __name__ == "__main__":
     run_diagnostics()
