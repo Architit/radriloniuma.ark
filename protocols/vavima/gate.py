@@ -1,9 +1,13 @@
-import hashlib
+import sys
 
-def verify_access(key):
-    # Простейшая реализация гексагонального ключа
-    check = hashlib.sha256(key.encode()).hexdigest()
-    return check.startswith("000") # Условный уровень сложности
+def verify_token(token):
+    # Простейшая проверка префикса нашего протокола
+    if token.startswith("HEX-"):
+        print("[VAVIMA] Доступ разрешен: Узел верифицирован.")
+        return True
+    print("[VAVIMA] ОТКАЗ: Невалидный токен.")
+    return False
 
 if __name__ == "__main__":
-    print("[VAVIMA] Gate active. Waiting for key...")
+    if len(sys.argv) > 1:
+        verify_token(sys.argv[1])
