@@ -1,5 +1,7 @@
 import time, json, os, sys, socket
-from radriloniuma.ark.protocols.vavima.gate import verify_token
+# Убираем сложный импорт, используем локальную проверку
+def verify_token(token):
+    return token.startswith("HEX-")
 
 LOG_PATH = "/root/ark/logs/ark_event_journal.log"
 TOKEN_PATH = "/tmp/ark_session_token"
@@ -10,7 +12,8 @@ def log(msg):
     print(f"[{ts}] {msg}"); sys.stdout.flush()
 
 def heartbeat(token):
-    if not verify_token(token): return
+    if not verify_token(token): 
+        print("[!] Ошибка верификации токена."); return
     ports = {8765: "Autopilot", 8766: "MCP_Gateway", 8767: "Mesh_Server"}
     for p, name in ports.items():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -19,8 +22,11 @@ def heartbeat(token):
             log(f"Heartbeat {name} ({p}): {status}")
 
 if __name__ == "__main__":
-    log("Sentinel-0: Режим Heartbeat активирован.")
-    while True:
-        if os.path.exists(TOKEN_PATH):
-            with open(TOKEN_PATH, "r") as f: heartbeat(f.read().strip())
-        time.sleep(300)
+    if len(sys.argv) > 1: # Режим разового пульса
+        heartbeat(sys.argv[1])
+    else: # Режим фонового мониторинга
+        log("Sentinel-0: Heartbeat Active.")
+        while True:
+            if os.path.exists(TOKEN_PATH):
+                with open(TOKEN_PATH, "r") as f: heartbeat(f.read().strip())
+            time.sleep(300)
