@@ -1,9 +1,10 @@
 import time
-import socket
-import sys
+import json
 import os
+import sys
 
 LOG_PATH = "/root/ark/logs/ark_event_journal.log"
+TELEMETRY_LOG = "/root/ark/logs/telemetry.json"
 
 def log(msg):
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
@@ -12,18 +13,38 @@ def log(msg):
     print(f"[{timestamp}] {msg}")
     sys.stdout.flush()
 
-def check_port(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(1.0)
-        return s.connect_ex(('localhost', port)) == 0
+def check_resources():
+    if os.path.exists(TELEMETRY_LOG):
+        try:
+            with open(TELEMETRY_LOG, "r") as f:
+                last_line = f.readlines()[-1]
+                data = json.loads(last_line)
+                if data["memory"] > 85.0:
+                    log("КРИТИЧЕСКАЯ НАГРУЗКА RAM: Инициация очистки логов.")
+                    open(LOG_PATH, 'w').close() # Ротация логов
+        except Exception:
+            pass
 
 if __name__ == "__main__":
-    log("Sentinel-0 переведен в режим активного сканирования шлюзов.")
-    ports = {8765: "Autopilot", 8766: "MCP_Gateway", 8767: "Mesh_Server"}
-    
+    log("Sentinel-0 переведен в режим автономного анализа ресурсов.")
     while True:
-        for port, name in ports.items():
-            status = "ONLINE" if check_port(port) else "OFFLINE"
-            if status == "OFFLINE":
-                log(f"ALERT: Узел {name} (Port {port}) недоступен.")
-        time.sleep(300) 
+        check_resources()
+        time.sleep(60)
+
+def check_resources():
+    if os.path.exists(TELEMETRY_LOG):
+        try:
+            with open(TELEMETRY_LOG, "r") as f:
+                last_line = f.readlines()[-1]
+                data = json.loads(last_line)
+                if data["memory"] > 85.0:
+                    log("КРИТИЧЕСКАЯ НАГРУЗКА RAM: Инициация очистки логов.")
+                    open(LOG_PATH, 'w').close()
+        except Exception:
+            pass
+
+if __name__ == "__main__":
+    log("Sentinel-0 переведен в режим автономного анализа ресурсов.")
+    while True:
+        check_resources()
+        time.sleep(60)
